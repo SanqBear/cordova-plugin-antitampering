@@ -34,9 +34,18 @@ module.exports = function (platform) {
             var locations = (new IosPlatformApi()).locations;
             projectName = locations.xcodeCordovaProj;
         } catch (e) {
-            var IosParser = this.requireCordovaModule('cordova-lib/src/cordova/metadata/ios_parser');
-            var iosParser = new IosParser(platformPath);
-            projectName = iosParser.cordovaproj;
+            try {
+                var IosParser = this.requireCordovaModule('cordova-lib/src/cordova/metadata/ios_parser');
+                var iosParser = new IosParser(platformPath);
+                projectName = iosParser.cordovaproj;
+            }
+            catch (innerErr) {
+                // if could not found ios_parser, get projectname from xcodeproj on platform
+                var xcodeproj_dir = fs.readdirSync(platformPath).filter(function (e) { return e.match(/\.xcodeproj$/i);})[0];
+                var xcodeproj = path.join(platformPath, xcodeproj_dir);
+                var originalName = xcodeproj.substring(xcodeproj.lastIndexOf(path.sep) + 1, xcodeproj.indexOf('.xcodeproj'));
+                projectName = path.join(platformPath, originalName);
+            }
         }
         pluginDir = path.join(projectName, 'Plugins', this.opts.plugin.id);
         sourceFile = path.join(pluginDir, 'AntiTamperingPlugin.m');
